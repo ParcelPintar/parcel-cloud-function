@@ -14,14 +14,26 @@ exports.helloWorld = functions.https.onRequest((request, response) => {
 exports.updateParcelGPSGyro = functions.database
 	.ref("/parcels/{parcelId}")
 	.onUpdate((snapshot, context) => {
-		const data = snapshot.after.val();
+		const { gps, gyro } = snapshot.after.val();
 		console.log(data);
 		if (data.gyro.threshold) {
-			return $http.patch("/parcels/" + context.params.parcelId, {
-				long: data.gps.long,
-				lat: data.gps.lat,
-				threshold: data.gyro.threshold
-			});
+			$http
+				.patch("/parcels/" + context.params.parcelId, {
+					long: gps.long,
+					lat: gps.lat,
+					threshold: gyro.threshold
+				})
+				.then(response => {
+					return $http.post("/logs", {
+						parcel: parcelId,
+						long: gps.long,
+						lat: gps.lat,
+						threshold: gyro.threshold
+					});
+				})
+				.catch(err => {
+					return err;
+				});
 		} else {
 			return false;
 		}
