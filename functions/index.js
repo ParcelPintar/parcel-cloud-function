@@ -15,26 +15,32 @@ exports.updateParcelGPSGyro = functions.database
 	.ref("/parcels/{parcelId}")
 	.onUpdate((snapshot, context) => {
 		const { gps, gyro } = snapshot.after.val();
-		console.log(data);
-		if (data.gyro.threshold) {
-			$http
-				.patch("/parcels/" + context.params.parcelId, {
-					long: gps.long,
-					lat: gps.lat,
-					threshold: gyro.threshold
-				})
-				.then(response => {
-					return $http.post("/logs", {
-						parcel: parcelId,
-						long: gps.long,
-						lat: gps.lat,
-						threshold: gyro.threshold
-					});
-				})
-				.catch(err => {
-					return err;
-				});
+		console.log(gps, gyro);
+		if (gyro.threshold) {
+			return $http.patch("/parcels/" + context.params.parcelId, {
+				long: gps.long,
+				lat: gps.lat,
+				threshold: gyro.threshold
+			});
 		} else {
 			return false;
+		}
+	});
+
+exports.createLog = functions.database
+	.ref("/parcels/{parcelId}")
+	.onUpdate((snapshot, context) => {
+		const { gps, gyro } = snapshot.after.val();
+		console.log(gps, gyro);
+		if (gyro.threshold === true) {
+			console.log("executing!!");
+			return $http.post("/logs", {
+				parcelId: context.params.parcelId,
+				long: gps.long,
+				lat: gps.lat,
+				threshold: gyro.threshold
+			});
+		} else {
+			return { message: "standing by...." };
 		}
 	});
